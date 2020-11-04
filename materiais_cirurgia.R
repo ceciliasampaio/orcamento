@@ -1,10 +1,10 @@
-install.packages("dplyr")
 library(dplyr)
-# library(reshape2)
+library(reshape2)
+
 
 
 CIRURGIAS_WORKFLOW <-
-  readRDS("P:\\DBAHNSN\\vw_bi_cirurgia_workflow.rds") %>%
+  readRDS("C:\\Users\\herico.souza\\Documents\\DBAHNSN\\vw_bi_cirurgia_workflow.rds") %>%
   mutate(DH_INICIO_CIRURGIA = as.Date(DH_INICIO_CIRURGIA)) %>%
   filter(CD_MULTI_EMPRESA == 1 &
            CD_CEN_CIR %in% c(1,3) &
@@ -14,7 +14,7 @@ CIRURGIAS_WORKFLOW <-
 
 
 FATURAMENTO <-
-  readRDS("P:\\DBAHNSN\\vw_bi_faturamento.rds") %>%
+  readRDS("C:\\Users\\herico.souza\\Documents\\DBAHNSN\\vw_bi_faturamento.rds") %>%
   mutate(DATA_LANCAMENTO = as.Date(DATA_LANCAMENTO)) %>%
   mutate(CD_PRO_FAT = as.numeric(CD_PRO_FAT)) %>%
   filter(CD_MULTI_EMPRESA == 1 & DATA_LANCAMENTO > "2018-12-31" &
@@ -24,12 +24,38 @@ FATURAMENTO <-
 
 
 ESTOQUE <-
-  readRDS("P:\\DBAHNSN\\vw_bi_mvto_estoque.rds") %>%
+  readRDS("C:\\Users\\herico.souza\\Documents\\DBAHNSN\\vw_bi_mvto_estoque.rds") %>%
   mutate(DATA = as.Date(DATA)) %>%
   filter(CD_MULTI_EMPRESA == 1 & DATA > "2018-12-31" & !is.na(CD_AVISO_CIRURGIA)) %>%
   group_by(CD_AVISO_CIRURGIA, CD_ITMVTO_ESTOQUE, CONTA_CUSTO) %>%
   tally() %>%
   unique()
+
+
+CIRURGIAS <- CIRURGIAS_WORKFLOW %>%
+  select(
+    CD_AVISO_CIRURGIA,
+    CD_ATENDIMENTO,
+    NM_PACIENTE,
+    COD_CIRURGIA,
+    CIRURGIA,
+    CD_CIRURGIAO,
+    CIRURGIAO,
+    ESPECIALID_PRINCIPAL_CIRURGIAO,
+    CIRURGIA_GRUPO,
+    CIRURGIA_SUB_GRUPO,
+    PROCEDIMENTOS,
+    CIRURGIA_PORTE
+  ) %>%
+  mutate(
+    CD_MVTO = CD_AVISO_CIRURGIA
+  )
+
+
+FAT_CIRURGIA <- FATURAMENTO %>%
+  filter(TP_MVTO %in% c("Cirurgia", "Equipamento")) %>%
+  inner_join(CIRURGIAS, by = "CD_MVTO")
+
 
 
 
@@ -55,8 +81,17 @@ ITENS_CIRURGIA <- CIRURGIAS_WORKFLOW %>%
     CD_ITMVTO = CD_ITMVTO_ESTOQUE
   )
 
-FATURMENTO_CIRURGIAS = FATURAMENTO %>%
-  left_join(ITENS_CIRURGIA, by = "CD_ITMVTO" )
+
+FAT_PRODUTO <- FATURAMENTO %>%
+  filter(TP_MVTO == "Produto") %>%
+  inner_join(ITENS_CIRURGIA, by = "CD_ITMVTO" )
+
+
+FAT_AUDITORIA <- FATURAMENTO %>%
+  filter(!TP_MVTO %in% c("Produto", "Cirurgia", "Equipamento"))
+
+
+FATURMENTO_CIRURGIAS <- union(FAT_CIRURGIA, FAT_PRODUTO)
 
 
 dados <- FATURMENTO_CIRURGIAS %>%
