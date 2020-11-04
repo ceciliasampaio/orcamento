@@ -136,7 +136,7 @@ total_cirurgias <- CIRURGIAS_WORKFLOW %>% # quantidade de cirurgias
   group_by(CIRURGIA) %>%
   summarise(cirurgias = n(),
             freq = (cirurgias/sum(total_cirurgias$cirurgias)*100),
-            acumulado = cumsum(freq)) %>%
+            acumulado = cumsum(sort(sum(total_cirurgias$freq), decreasing = T))) %>%
   unique()
 
 total_itens <- dados %>%  # quantidade de itens
