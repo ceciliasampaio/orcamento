@@ -91,7 +91,7 @@ FAT_AUDITORIA <- FATURAMENTO %>%
   filter(!TP_MVTO %in% c("Produto", "Cirurgia", "Equipamento"))
 
 
-FATURMENTO_CIRURGIAS <- union(FAT_CIRURGIA, FAT_PRODUTO)
+FATURMENTO_CIRURGIAS <- bind_rows(FAT_CIRURGIA, FAT_PRODUTO, FAT_AUDITORIA)
 
 
 dados <- FATURMENTO_CIRURGIAS %>%
@@ -166,13 +166,18 @@ dados <- FATURMENTO_CIRURGIAS %>%
     FAT = sum(faturamento)
   )
 
-
+# Frequencia de realizacao de cirurgias.
 total_cirurgias <- CIRURGIAS_WORKFLOW %>% # quantidade de cirurgias
   group_by(CIRURGIA) %>%
-  summarise(cirurgias = n(),
-            freq = (cirurgias/sum(total_cirurgias$cirurgias)*100),
-            acumulado = cumsum(sort(sum(total_cirurgias$freq), decreasing = T))) %>%
-  unique()
+  summarise(
+    cirurgias = n(),
+    freq = (cirurgias/sum(total_cirurgias$cirurgias)*100)
+  ) %>%
+  arrange(desc(freq)) %>%
+  mutate(
+    acumulado = cumsum(freq)
+  )
+
 
 total_itens <- dados %>%  # quantidade de itens
   group_by(
