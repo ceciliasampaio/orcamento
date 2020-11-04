@@ -173,9 +173,24 @@ total <- total_itens %>% # quantidade de itens por cirurgia
     PROCEDIMENTO,
     VL_FATOR_PRO_FAT,
     freq,
-    qtd_perc,
-    cirurgias,
-    FATURAMENTO
+    qtd_perc
   )
 
+
+abc <- total_itens %>%
+  inner_join(total_cirurgias, by = "CIRURGIA") %>%
+  select(
+    COD_CIRURGIA,
+    CIRURGIA,
+    cirurgias,
+    FATURAMENTO
+  ) %>%
+  group_by(
+    COD_CIRURGIA,
+    CIRURGIA
+  ) %>%
+  summarise(
+    Qtd_Cirurgias = mean(cirurgias),
+    Fat = sum(FATURAMENTO)
+  )
 
