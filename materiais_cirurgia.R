@@ -1,12 +1,12 @@
 # OBTENDO PACOTES ---------------------------------------------------------
 
 library(dplyr)
-library(reshape2)
+# library(reshape2)
 
 # OBTENDO DADOS E APLICANDO TRATAMENTO PREVIO -----------------------------
 
 CIRURGIAS_WORKFLOW <-
-  readRDS("C:\\Users\\herico.souza\\Documents\\DBAHNSN\\vw_bi_cirurgia_workflow.rds") %>%
+  readRDS("P:\\DBAHNSN\\vw_bi_cirurgia_workflow.rds") %>%
   mutate(DH_INICIO_CIRURGIA = as.Date(DH_INICIO_CIRURGIA)) %>%
   filter(CD_MULTI_EMPRESA == 1 &
            CD_CEN_CIR %in% c(1,3) &
@@ -15,7 +15,7 @@ CIRURGIAS_WORKFLOW <-
   )
 
 FATURAMENTO <-
-  readRDS("C:\\Users\\herico.souza\\Documents\\DBAHNSN\\vw_bi_faturamento.rds") %>%
+  readRDS("P:\\DBAHNSN\\vw_bi_faturamento.rds") %>%
   mutate(DATA_LANCAMENTO = as.Date(DATA_LANCAMENTO)) %>%
   mutate(CD_PRO_FAT = as.numeric(CD_PRO_FAT)) %>%
   filter(CD_MULTI_EMPRESA == 1 & DATA_LANCAMENTO > "2018-12-31" &
@@ -23,7 +23,7 @@ FATURAMENTO <-
   )
 
 ESTOQUE <-
-  readRDS("C:\\Users\\herico.souza\\Documents\\DBAHNSN\\vw_bi_mvto_estoque.rds") %>%
+  readRDS("P:\\DBAHNSN\\vw_bi_mvto_estoque.rds") %>%
   mutate(DATA = as.Date(DATA)) %>%
   filter(CD_MULTI_EMPRESA == 1 & DATA > "2018-12-31" & !is.na(CD_AVISO_CIRURGIA)) %>%
   group_by(CD_AVISO_CIRURGIA, CD_ITMVTO_ESTOQUE, CONTA_CUSTO) %>%
@@ -177,7 +177,9 @@ total_cirurgias <- CIRURGIAS_WORKFLOW %>% # quantidade de cirurgias
   ) %>%
   arrange(desc(freq)) %>%
   mutate(
-    acumulado = cumsum(freq)
+    acumulado = cumsum(freq),
+    abc = ifelse(acumulado <= 80,"A",ifelse(acumulado >= 95, "C","B")) # curva abc das cirurgias
+
   )
 
 
@@ -235,5 +237,13 @@ abc <- total_itens %>%
   ) %>%
   summarise(
     Qtd_Cirurgias = mean(cirurgias),
-    Fat = sum(FATURAMENTO)
+    Fat = sum(FATURAMENTO),
+    freq_fat = (Fat/sum(abc$Fat)*100)
+  ) %>%
+  arrange(desc(freq_fat)) %>%
+  mutate(
+    acumulado = cumsum(freq_fat),
+    abc = ifelse(acumulado <= 80,"A",ifelse(acumulado >= 95, "C","B"))
+    # curva abc do faturamento
   )
+
