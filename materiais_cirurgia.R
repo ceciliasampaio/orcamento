@@ -1,7 +1,13 @@
+
+
+# OBTENDO PACOTES ---------------------------------------------------------
+
 library(dplyr)
 library(reshape2)
 
 
+
+# OBTENDO DADOS E APLICANDO TRATAMENTO PREVIO -----------------------------
 
 CIRURGIAS_WORKFLOW <-
   readRDS("C:\\Users\\herico.souza\\Documents\\DBAHNSN\\vw_bi_cirurgia_workflow.rds") %>%
@@ -10,8 +16,7 @@ CIRURGIAS_WORKFLOW <-
            CD_CEN_CIR %in% c(1,3) &
            DH_INICIO_CIRURGIA > "2018-12-31" &
            SITUACAO_AVISO == "Realizado"
-         )
-
+  )
 
 FATURAMENTO <-
   readRDS("C:\\Users\\herico.souza\\Documents\\DBAHNSN\\vw_bi_faturamento.rds") %>%
@@ -21,8 +26,6 @@ FATURAMENTO <-
            SETOR_EXECUTANTE %in% c("CENTRO CIRURGICO", "HEMODINAMICA")
   )
 
-
-
 ESTOQUE <-
   readRDS("C:\\Users\\herico.souza\\Documents\\DBAHNSN\\vw_bi_mvto_estoque.rds") %>%
   mutate(DATA = as.Date(DATA)) %>%
@@ -31,6 +34,8 @@ ESTOQUE <-
   tally() %>%
   unique()
 
+
+# FRAGMENTACAO DE TABELAS -------------------------------------------------
 
 CIRURGIAS <- CIRURGIAS_WORKFLOW %>%
   select(
@@ -52,11 +57,10 @@ CIRURGIAS <- CIRURGIAS_WORKFLOW %>%
   )
 
 
+
 FAT_CIRURGIA <- FATURAMENTO %>%
   filter(TP_MVTO %in% c("Cirurgia", "Equipamento")) %>%
   inner_join(CIRURGIAS, by = "CD_MVTO")
-
-
 
 
 ITENS_CIRURGIA <- CIRURGIAS_WORKFLOW %>%
@@ -91,8 +95,14 @@ FAT_AUDITORIA <- FATURAMENTO %>%
   filter(!TP_MVTO %in% c("Produto", "Cirurgia", "Equipamento"))
 
 
+
+# UNIAO DE FRAGMENTOS -----------------------------------------------------
+
 FATURMENTO_CIRURGIAS <- bind_rows(FAT_CIRURGIA, FAT_PRODUTO, FAT_AUDITORIA)
 
+
+
+# ANALISE E DELINEAMENTO DO PROTOCLO --------------------------------------
 
 dados <- FATURMENTO_CIRURGIAS %>%
   filter(!is.na(CD_AVISO_CIRURGIA)) %>%
