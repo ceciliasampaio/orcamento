@@ -1,11 +1,7 @@
-
-
 # OBTENDO PACOTES ---------------------------------------------------------
 
 library(dplyr)
 library(reshape2)
-
-
 
 # OBTENDO DADOS E APLICANDO TRATAMENTO PREVIO -----------------------------
 
@@ -34,7 +30,6 @@ ESTOQUE <-
   tally() %>%
   unique()
 
-
 # FRAGMENTACAO DE TABELAS -------------------------------------------------
 
 CIRURGIAS <- CIRURGIAS_WORKFLOW %>%
@@ -55,7 +50,6 @@ CIRURGIAS <- CIRURGIAS_WORKFLOW %>%
   mutate(
     CD_MVTO = CD_AVISO_CIRURGIA
   )
-
 
 
 FAT_CIRURGIA <- FATURAMENTO %>%
@@ -95,11 +89,9 @@ FAT_AUDITORIA <- FATURAMENTO %>%
   filter(!TP_MVTO %in% c("Produto", "Cirurgia", "Equipamento"))
 
 
-
 # UNIAO DE FRAGMENTOS -----------------------------------------------------
 
 FATURMENTO_CIRURGIAS <- bind_rows(FAT_CIRURGIA, FAT_PRODUTO, FAT_AUDITORIA)
-
 
 
 # ANALISE E DELINEAMENTO DO PROTOCLO --------------------------------------
@@ -245,4 +237,3 @@ abc <- total_itens %>%
     Qtd_Cirurgias = mean(cirurgias),
     Fat = sum(FATURAMENTO)
   )
-
