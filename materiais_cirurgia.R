@@ -5,8 +5,10 @@ library(dplyr)
 
 # OBTENDO DADOS E APLICANDO TRATAMENTO PREVIO -----------------------------
 
+diretorio <- "P:\\DBAHNSN"
+
 CIRURGIAS_WORKFLOW <-
-  readRDS("P:\\DBAHNSN\\vw_bi_cirurgia_workflow.rds") %>%
+  readRDS(paste(diretorio,"\\vw_bi_cirurgia_workflow.rds", sep = "")) %>%
   mutate(DH_INICIO_CIRURGIA = as.Date(DH_INICIO_CIRURGIA)) %>%
   filter(CD_MULTI_EMPRESA == 1 &
            CD_CEN_CIR %in% c(1,3) &
@@ -15,7 +17,7 @@ CIRURGIAS_WORKFLOW <-
   )
 
 FATURAMENTO <-
-  readRDS("P:\\DBAHNSN\\vw_bi_faturamento.rds") %>%
+  readRDS(paste(diretorio,"\\vw_bi_faturamento.rds", sep = "")) %>%
   mutate(DATA_LANCAMENTO = as.Date(DATA_LANCAMENTO)) %>%
   mutate(CD_PRO_FAT = as.numeric(CD_PRO_FAT)) %>%
   filter(CD_MULTI_EMPRESA == 1 & DATA_LANCAMENTO > "2018-12-31" &
@@ -172,13 +174,15 @@ dados <- FATURMENTO_CIRURGIAS %>%
 total_cirurgias <- CIRURGIAS_WORKFLOW %>% # quantidade de cirurgias
   group_by(CIRURGIA) %>%
   summarise(
-    cirurgias = n(),
+    cirurgias = n()
+  ) %>%
+  mutate(
     freq = (cirurgias/sum(total_cirurgias$cirurgias)*100)
   ) %>%
   arrange(desc(freq)) %>%
   mutate(
-    acumulado = cumsum(freq),
-    abc = ifelse(acumulado <= 80,"A",ifelse(acumulado >= 95, "C","B")) # curva abc das cirurgias
+    acumulado_cir = cumsum(freq),
+    abc_cirurgias = ifelse(acumulado_cir <= 80, "A",ifelse(acumulado_cir >= 95, "C", "B")) # curva abc das cirurgias
 
   )
 
@@ -232,18 +236,26 @@ abc <- total_itens %>%
     FATURAMENTO
   ) %>%
   group_by(
-    COD_CIRURGIA,
     CIRURGIA
   ) %>%
   summarise(
     Qtd_Cirurgias = mean(cirurgias),
-    Fat = sum(FATURAMENTO),
+    Fat = sum(FATURAMENTO)
+  ) %>%
+  mutate(
     freq_fat = (Fat/sum(abc$Fat)*100)
   ) %>%
   arrange(desc(freq_fat)) %>%
   mutate(
-    acumulado = cumsum(freq_fat),
-    abc = ifelse(acumulado <= 80,"A",ifelse(acumulado >= 95, "C","B"))
+    acumulado_fat = cumsum(freq_fat),
+    abc_fat = ifelse(acumulado_fat <= 80, "A", ifelse(acumulado_fat >= 95, "C", "B"))
     # curva abc do faturamento
   )
+
+
+curva <- abc %>%  # curva AA AB ...
+  inner_join(total_cirurgias, by = "CIRURGIA") %>%
+  mutate(
+    abc = paste(abc_fat, abc_cirurgias, sep = ""))
+
 
