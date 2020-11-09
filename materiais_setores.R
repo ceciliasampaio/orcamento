@@ -24,6 +24,12 @@ ESTOQUE <-
   tally() %>%
   unique()
 
+ATENDIMENTOS <-
+  readRDS(paste(diretorio,"\\vw_bi_atendimento.rds", sep = "")) %>%
+  mutate(DATA_HORA = as.Date(DATA_HORA)) %>%
+  filter(CD_MULTI_EMPRESA == 1 &
+           DATA_HORA > "2018-12-31"
+  )
 
 FATURAMENTO_MAT_MED <-
   readRDS(paste(diretorio,"\\vw_bi_faturamento.rds", sep = "")) %>%
