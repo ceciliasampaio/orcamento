@@ -5,7 +5,7 @@ library(dplyr)
 
 # OBTENDO DADOS E APLICANDO TRATAMENTO PREVIO -----------------------------
 
-diretorio <- "P:\\DBAHNSN"
+diretorio <- "C:\\Users\\herico.souza\\Documents\\DBAHNSN"
 
 CIRURGIAS_WORKFLOW <-
   readRDS(paste(diretorio,"\\vw_bi_cirurgia_workflow.rds", sep = "")) %>%
@@ -16,21 +16,45 @@ CIRURGIAS_WORKFLOW <-
            SITUACAO_AVISO == "Realizado"
   )
 
-CIRURGIAS_WORKFLOW$DH_INICIO_CIRURGIAFATURAMENTO <-
+ATENDIMENTOS <-
+  readRDS(paste(diretorio,"\\vw_bi_atendimento.rds", sep = "")) %>%
+  mutate(DATA_HORA = as.Date(DATA_HORA)) %>%
+  filter(CD_MULTI_EMPRESA == 1 &
+           DATA_HORA > "2018-12-31"
+  )
+
+
+FATURAMENTO <-
   readRDS(paste(diretorio,"\\vw_bi_faturamento.rds", sep = "")) %>%
   mutate(DATA_LANCAMENTO = as.Date(DATA_LANCAMENTO)) %>%
   mutate(CD_PRO_FAT = as.numeric(CD_PRO_FAT)) %>%
-  filter(CD_MULTI_EMPRESA == 1 & DATA_LANCAMENTO > "2018-12-31" &
-           SETOR_EXECUTANTE %in% c("CENTRO CIRURGICO", "HEMODINAMICA")
+  filter(
+    CD_MULTI_EMPRESA == 1 &
+    DATA_LANCAMENTO > "2018-12-31" &
+    SETOR_EXECUTANTE %in% c("CENTRO CIRURGICO", "HEMODINAMICA")
   )
+
+
 
 ESTOQUE <-
   readRDS(paste(diretorio,"\\vw_bi_mvto_estoque.rds", sep = "")) %>%
   mutate(DATA = as.Date(DATA)) %>%
-  filter(CD_MULTI_EMPRESA == 1 & DATA > "2018-12-31" & !is.na(CD_AVISO_CIRURGIA)) %>%
-  group_by(CD_AVISO_CIRURGIA, CD_ITMVTO_ESTOQUE, CONTA_CUSTO) %>%
+  filter(
+    CD_MULTI_EMPRESA == 1 &
+    DATA > "2018-12-31"
+  ) %>%
+  group_by(
+    CD_AVISO_CIRURGIA,
+    CD_ITMVTO_ESTOQUE,
+    ESPECIE,
+    CLASSE,
+    SUB_CLASSE,
+    UNIDADE,
+    CONTA_CUSTO
+  ) %>%
   tally() %>%
   unique()
+
 
 # FRAGMENTACAO DE TABELAS -------------------------------------------------
 
@@ -170,25 +194,31 @@ dados <- FATURMENTO_CIRURGIAS %>%
     FAT = sum(faturamento)
   )
 
-# Frequencia de realizacao de cirurgias.
+# Frequencia de realizacao de cirurgias
 
-total_cirurgias <- CIRURGIAS_WORKFLOW %>% # quantidade de cirurgias
+# curva abc das cirurgias
+CIRURGIAS_ABC <- CIRURGIAS_WORKFLOW %>%
   group_by(CIRURGIA) %>%
   summarise(
     cirurgias = n()
   ) %>%
   mutate(
-    freq = (cirurgias/sum(total_cirurgias$cirurgias)*100)
+    freq = (cirurgias/sum(cirurgias)*100)
   ) %>%
   arrange(desc(freq)) %>%
   mutate(
     acumulado_cir = cumsum(freq),
-    abc_cirurgias = ifelse(acumulado_cir <= 80, "A",ifelse(acumulado_cir >= 95, "C", "B")) # curva abc das cirurgias
-
+    abc_cirurgias = ifelse(
+      acumulado_cir <= 80, "A",
+      ifelse(
+        acumulado_cir >= 95, "C", "B"
+        )
+      )
   )
 
 
-total_itens <- dados %>%  # quantidade de itens
+# quantidade de itens
+total_itens <- dados %>%
   group_by(
     COD_CIRURGIA,
     CIRURGIA,
@@ -203,12 +233,19 @@ total_itens <- dados %>%  # quantidade de itens
     VL_FATOR_PRO_FAT,
     FAT
   ) %>%
-  summarise(itens = n(), QT = sum(QTD), FATURAMENTO = sum(FAT)) %>%
-  mutate(COD_CIRURGIA = as.character(COD_CIRURGIA))
+  summarise(
+    itens = n(),
+    QT = sum(QTD),
+    FATURAMENTO = sum(FAT)
+  ) %>%
+  mutate(
+    COD_CIRURGIA = as.character(COD_CIRURGIA)
+  )
 
 
-total <- total_itens %>% # quantidade de itens por cirurgia
-  inner_join(total_cirurgias, by = "CIRURGIA") %>%
+# quantidade de itens por cirurgia
+total <- total_itens %>%
+  inner_join(CIRURGIAS_ABC, by = "CIRURGIA") %>%
   mutate(freq = itens/cirurgias) %>%
   mutate(qtd_perc = round(QT/cirurgias, 9) ) %>%
   select(
@@ -227,9 +264,9 @@ total <- total_itens %>% # quantidade de itens por cirurgia
     qtd_perc
   )
 
-
-abc <- total_itens %>%
-  inner_join(total_cirurgias, by = "CIRURGIA") %>%
+# curva abc do faturamento
+FATURAMENTO_ABC <- total_itens %>%
+  inner_join(CIRURGIAS_ABC, by = "CIRURGIA") %>%
   select(
     COD_CIRURGIA,
     CIRURGIA,
@@ -244,20 +281,57 @@ abc <- total_itens %>%
     Fat = sum(FATURAMENTO)
   ) %>%
   mutate(
-    freq_fat = (Fat/sum(abc$Fat)*100)
+    freq_fat = (Fat/sum(Fat)*100)
   ) %>%
   arrange(desc(freq_fat)) %>%
   mutate(
     acumulado_fat = cumsum(freq_fat),
     abc_fat = ifelse(acumulado_fat <= 80, "A", ifelse(acumulado_fat >= 95, "C", "B"))
-    # curva abc do faturamento
+  )
+
+# curva abc do tiket médio
+TIKET_ABC <- total_itens %>%
+  inner_join(CIRURGIAS_ABC, by = "CIRURGIA") %>%
+  select(
+    COD_CIRURGIA,
+    CIRURGIA,
+    cirurgias,
+    FATURAMENTO
+  ) %>%
+  group_by(
+    CIRURGIA
+  ) %>%
+  summarise(
+    Qtd_Cirurgias = mean(cirurgias),
+    Fat = sum(FATURAMENTO),
+    Tk_Medio = round(Fat/Qtd_Cirurgias,2)
+  ) %>%
+  arrange(desc(Tk_Medio)) %>%
+  mutate(
+    Tk_Abc = ifelse(
+      Tk_Medio >= quantile(Tk_Medio, 0.75), "A",
+      ifelse(
+        Tk_Medio < quantile(Tk_Medio, 0.50), "C", "B")
+      )
+  ) %>%
+  select(
+    CIRURGIA,
+    Tk_Medio,
+    Tk_Abc
   )
 
 
-curva <- abc %>%  # curva AA AB ...
-  inner_join(total_cirurgias, by = "CIRURGIA") %>%
+# curva abc dos procedimentos por qtd, fat e ticket medio
+curva <- FATURAMENTO_ABC %>%  # curva AA AB ...
+  inner_join(CIRURGIAS_ABC, by = "CIRURGIA") %>%
+  inner_join(TIKET_ABC, by = "CIRURGIA") %>%
   mutate(
-    abc = paste(abc_fat, abc_cirurgias, sep = ""))
-
-
-
+    abc = paste(abc_fat, abc_cirurgias, Tk_Abc, sep = "")
+  ) %>%
+  select(
+    CIRURGIA,
+    Qtd_Cirurgias,
+    Fat,
+    Tk_Medio,
+    abc
+  )
