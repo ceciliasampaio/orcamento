@@ -5,7 +5,7 @@ library(dplyr)
 
 # OBTENDO DADOS E APLICANDO TRATAMENTO PREVIO -----------------------------
 
-diretorio <- "C:\\Users\\herico.souza\\Documents\\DBAHNSN"
+diretorio <- "P:\\DBAHNSN"
 
 CIRURGIAS_WORKFLOW <-
   readRDS(paste(diretorio,"\\vw_bi_cirurgia_workflow.rds", sep = "")) %>%
@@ -16,7 +16,7 @@ CIRURGIAS_WORKFLOW <-
            SITUACAO_AVISO == "Realizado"
   )
 
-FATURAMENTO <-
+CIRURGIAS_WORKFLOW$DH_INICIO_CIRURGIAFATURAMENTO <-
   readRDS(paste(diretorio,"\\vw_bi_faturamento.rds", sep = "")) %>%
   mutate(DATA_LANCAMENTO = as.Date(DATA_LANCAMENTO)) %>%
   mutate(CD_PRO_FAT = as.numeric(CD_PRO_FAT)) %>%
@@ -171,6 +171,7 @@ dados <- FATURMENTO_CIRURGIAS %>%
   )
 
 # Frequencia de realizacao de cirurgias.
+
 total_cirurgias <- CIRURGIAS_WORKFLOW %>% # quantidade de cirurgias
   group_by(CIRURGIA) %>%
   summarise(
@@ -257,5 +258,6 @@ curva <- abc %>%  # curva AA AB ...
   inner_join(total_cirurgias, by = "CIRURGIA") %>%
   mutate(
     abc = paste(abc_fat, abc_cirurgias, sep = ""))
+
 
 
