@@ -259,3 +259,4 @@ curva <- abc %>%  # curva AA AB ...
     abc = paste(abc_fat, abc_cirurgias, sep = ""))
 
 
+
