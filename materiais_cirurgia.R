@@ -1,11 +1,11 @@
 # OBTENDO PACOTES ---------------------------------------------------------
 
 library(dplyr)
-# library(reshape2)
+
 
 # OBTENDO DADOS E APLICANDO TRATAMENTO PREVIO -----------------------------
 
-diretorio <- "P:\\DBAHNSN"
+diretorio <- "C:\\Users\\herico.souza\\Documents\\DBAHNSN"
 
 CIRURGIAS_WORKFLOW <-
   readRDS(paste(diretorio,"\\vw_bi_cirurgia_workflow.rds", sep = "")) %>%
@@ -25,7 +25,7 @@ FATURAMENTO <-
   )
 
 ESTOQUE <-
-  readRDS("P:\\DBAHNSN\\vw_bi_mvto_estoque.rds") %>%
+  readRDS(paste(diretorio,"\\vw_bi_mvto_estoque.rds", sep = "")) %>%
   mutate(DATA = as.Date(DATA)) %>%
   filter(CD_MULTI_EMPRESA == 1 & DATA > "2018-12-31" & !is.na(CD_AVISO_CIRURGIA)) %>%
   group_by(CD_AVISO_CIRURGIA, CD_ITMVTO_ESTOQUE, CONTA_CUSTO) %>%
