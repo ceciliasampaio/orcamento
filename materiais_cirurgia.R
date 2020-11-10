@@ -5,10 +5,10 @@ library(dplyr)
 
 # OBTENDO DADOS E APLICANDO TRATAMENTO PREVIO -----------------------------
 
-diretorio <- "C:\\Users\\herico.souza\\Documents\\DBAHNSN"
+diretorio <- "P:\\DBAHNSN"
 
 CIRURGIAS_WORKFLOW <-
-  readRDS(paste(diretorio,"\\vw_bi_cirurgia_workflow.rds", sep = "")) %>%
+  readRDS(paste(diretorio,"vw_bi_cirurgia_workflow.rds", sep = "")) %>%
   mutate(DH_INICIO_CIRURGIA = as.Date(DH_INICIO_CIRURGIA)) %>%
   filter(CD_MULTI_EMPRESA == 1 &
            CD_CEN_CIR %in% c(1,3) &
@@ -18,7 +18,7 @@ CIRURGIAS_WORKFLOW <-
 
 
 FATURAMENTO <-
-  readRDS(paste(diretorio,"\\vw_bi_faturamento.rds", sep = "")) %>%
+  readRDS(paste(diretorio,"DBAHNSN\\vw_bi_faturamento.rds", sep = "")) %>%
   mutate(DATA_LANCAMENTO = as.Date(DATA_LANCAMENTO)) %>%
   mutate(CD_PRO_FAT = as.numeric(CD_PRO_FAT)) %>%
   filter(
