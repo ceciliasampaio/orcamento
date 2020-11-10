@@ -92,7 +92,11 @@ ITENS_CIRURGIA <- CIRURGIAS_WORKFLOW %>%
     PROCEDIMENTOS,
     CIRURGIA_PORTE,
     CD_ITMVTO_ESTOQUE,
-    CONTA_CUSTO
+    CONTA_CUSTO,
+    ESPECIE,
+    CLASSE,
+    SUB_CLASSE,
+    UNIDADE
   ) %>%
   rename(
     CD_ITMVTO = CD_ITMVTO_ESTOQUE
@@ -125,9 +129,13 @@ dados <- FATURMENTO_CIRURGIAS %>%
     PRODUTO_ESPECIE,
     PRODUTO_CLASSE,
     PRODUTO_SUBCLASSE,
+    ESPECIE,
+    CLASSE,
+    SUB_CLASSE,
     CONTA_CUSTO,
     CD_PRO_FAT,
     PROCEDIMENTO,
+    UNIDADE,
     COD_CIRURGIA,
     CIRURGIA,
     QT_FAT_PRODUCAO,
@@ -158,13 +166,17 @@ dados <- FATURMENTO_CIRURGIAS %>%
     PRODUTO_ESPECIE,
     PRODUTO_CLASSE,
     PRODUTO_SUBCLASSE,
+    ESPECIE,
+    CLASSE,
+    SUB_CLASSE,
     CONTA_CUSTO,
     CD_PRO_FAT,
     PROCEDIMENTO,
+    UNIDADE,
     COD_CIRURGIA,
     CIRURGIA,
     VL_FATOR_PRO_FAT,
-    QT,
+    qtd,
     faturamento
   ) %>%
   group_by(
@@ -175,15 +187,19 @@ dados <- FATURMENTO_CIRURGIAS %>%
     PRODUTO_ESPECIE,
     PRODUTO_CLASSE,
     PRODUTO_SUBCLASSE,
+    ESPECIE,
+    CLASSE,
+    SUB_CLASSE,
     CONTA_CUSTO,
     CD_PRO_FAT,
     PROCEDIMENTO,
+    UNIDADE,
     COD_CIRURGIA,
     CIRURGIA,
     VL_FATOR_PRO_FAT
   ) %>%
   summarise(
-    QTD = sum(QT),
+    QTD = sum(qtd),
     FAT = sum(faturamento)
   )
 
@@ -223,8 +239,8 @@ total_itens <- dados %>%
     CONTA_CUSTO,
     CD_PRO_FAT,
     PROCEDIMENTO,
-    VL_FATOR_PRO_FAT,
-    FAT
+    UNIDADE,
+    VL_FATOR_PRO_FAT
   ) %>%
   summarise(
     itens = n(),
@@ -252,6 +268,7 @@ total <- total_itens %>%
     CONTA_CUSTO,
     CD_PRO_FAT,
     PROCEDIMENTO,
+    UNIDADE,
     VL_FATOR_PRO_FAT,
     freq,
     qtd_perc
