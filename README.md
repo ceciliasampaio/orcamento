@@ -4,5 +4,6 @@
 <!-- badges: start -->
 <!-- badges: end -->
 
-The goal of orcamento is to ...
+Confecção de protocolos de conduta médica no tratamento ao paciente com base no
+CID de entrada e saída.
 
