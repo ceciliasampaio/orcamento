@@ -42,7 +42,7 @@ ATENDIMENTOS <-
     !grepl("TESTE", NM_PACIENTE)
   )
 
-FATURAMENTO_MAT_MED <-
+FATURAMENTO <-
   readRDS(paste(diretorio,"\\vw_bi_faturamento.rds", sep = "")) %>%
   mutate(DATA_LANCAMENTO = as.Date(DATA_LANCAMENTO)) %>%
   mutate(CD_PRO_FAT = as.numeric(CD_PRO_FAT)) %>%
@@ -50,12 +50,8 @@ FATURAMENTO_MAT_MED <-
   filter(
     CD_MULTI_EMPRESA == 1 &
       DATA_LANCAMENTO > "2018-12-31" &
-      !SETOR_EXECUTANTE %in% c("CENTRO CIRURGICO", "HEMODINAMICA") &
-      TP_MVTO == "Produto"
-  )
-
-
-dados <- FATURAMENTO_MAT_MED %>%
+      !SETOR_EXECUTANTE %in% c("CENTRO CIRURGICO", "HEMODINAMICA")
+  ) %>%
   inner_join(
     select(
       ATENDIMENTOS,
@@ -66,7 +62,20 @@ dados <- FATURAMENTO_MAT_MED %>%
       DS_CID
     ),
     by = "CD_ATENDIMENTO"
-  ) %>%
+  )
+
+FATURAMENTO_MAT_MED <- FATURAMENTO %>%
+  filter( TP_MVTO == "Produto" )
+
+
+FATURAMENTO_SADT_AUDITORIA <- FATURAMENTO %>%
+  filter(
+    TP_MVTO != "Produto" &
+    GRUPO_FATURAMENTO != "PACOTES ESPECIAIS"
+  )
+
+
+PROTOCOLOS <- FATURAMENTO_MAT_MED %>%
   inner_join(
       ESTOQUE,
     by = c(
@@ -74,7 +83,8 @@ dados <- FATURAMENTO_MAT_MED %>%
       "CD_ITMVTO"="CD_ITMVTO_ESTOQUE",
       "PROCEDIMENTO"="PRODUTO"
     )
-  ) %>%
+  ) %>% #JOIN COM TABELA DE ESTOQUE
+  bind_rows(FATURAMENTO_SADT_AUDITORIA) %>% #JOIN DEMAIS ITENS DA CONTA
   mutate(
     qtd = rowSums(.[c("QT_FAT_PRODUCAO", "QT_FAT_CREDENCIADO", "QT_LANC_PACOTE")], na.rm = TRUE),
     faturamento = rowSums(.[c("VL_FAT_PRODUCAO", "VL_FAT_CREDENCIADO", "VL_LANC_PACOTE")], na.rm = TRUE)
@@ -87,6 +97,8 @@ dados <- FATURAMENTO_MAT_MED %>%
     CD_ATENDIMENTO,
     SETOR_EXECUTANTE,
     CONTA_CUSTO,
+    GRUPO_FATURAMENTO,
+    GRUPO_PROCEDIMENTO,
     CD_PRO_FAT,
     PROCEDIMENTO,
     UNIDADE,
@@ -99,10 +111,7 @@ dados <- FATURAMENTO_MAT_MED %>%
     SUB_CLASSE,
     qtd,
     faturamento
-  )
-
-
-total_setor <- dados %>% # total de atendimentos por setor
+  ) %>%
   mutate(
     SETOR_EXECUTANTE =
       replace(
@@ -136,6 +145,9 @@ total_setor <- dados %>% # total de atendimentos por setor
     CD_CID,
     DS_CID,
     SETOR_EXECUTANTE,
+    GRUPO_FATURAMENTO,
+    GRUPO_PROCEDIMENTO,
+    CONTA_CUSTO,
     ESPECIE,
     CLASSE,
     SUB_CLASSE,
@@ -150,28 +162,7 @@ total_setor <- dados %>% # total de atendimentos por setor
     QTD = sum(qtd)
   ) %>%
   mutate(
-    per_freq = round(freq/ATENDIMENTOS*100,9),
-    Qtd_Perc = round(QTD/ATENDIMENTOS,9)
+    per_freq = round(freq/ATENDIMENTOS*100,5),
+    Qtd_Perc = round(QTD/ATENDIMENTOS,5)
   ) %>%
   arrange(desc(ATENDIMENTOS),CD_CID_ENTRADA, CD_CID, SETOR_EXECUTANTE, desc(per_freq))
-  arrange(desc(freq_setor)) %>%
-  mutate(
-    acumulado_setor = cumsum(freq_setor),
-    abc_setor = ifelse(acumulado_setor <= 80, "A", ifelse(acumulado_setor >= 95, "C", "B"))
-  )
-
-
-total_itens <- dados %>% # total de itens por procedimento e por setor
-  group_by(
-    SETOR_EXECUTANTE,
-    PROCEDIMENTO
-  ) %>%
-  summarise(
-    itens = n()
-  )
-
-total <- total_setor %>%
-  inner_join(total_itens, by = "SETOR_EXECUTANTE") %>%
-  mutate(freq = itens/total)
-
-
