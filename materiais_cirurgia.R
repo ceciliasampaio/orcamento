@@ -144,7 +144,8 @@ dados <- FATURMENTO_CIRURGIAS %>%
     VL_FATOR_PRO_FAT,
     VL_FAT_PRODUCAO,
     VL_FAT_CREDENCIADO,
-    VL_LANC_PACOTE
+    VL_LANC_PACOTE,
+    CUSTO_UNITARIO
   ) %>%
   mutate(
     qtd = rowSums(.[c("QT_FAT_PRODUCAO", "QT_FAT_CREDENCIADO", "QT_LANC_PACOTE")], na.rm = TRUE)
@@ -177,7 +178,9 @@ dados <- FATURMENTO_CIRURGIAS %>%
     CIRURGIA,
     VL_FATOR_PRO_FAT,
     qtd,
-    faturamento
+    faturamento,
+    CUSTO_UNITARIO,
+    QT
   ) %>%
   group_by(
     CD_ATENDIMENTO,
@@ -196,11 +199,14 @@ dados <- FATURMENTO_CIRURGIAS %>%
     UNIDADE,
     COD_CIRURGIA,
     CIRURGIA,
-    VL_FATOR_PRO_FAT
+    VL_FATOR_PRO_FAT,
+    CUSTO_UNITARIO,
+    QT
   ) %>%
   summarise(
     QTD = sum(qtd),
-    FAT = sum(faturamento)
+    FAT = sum(faturamento),
+    custo = CUSTO_UNITARIO*QT
   )
 
 # Frequencia de realizacao de cirurgias
@@ -240,7 +246,8 @@ total_itens <- dados %>%
     CD_PRO_FAT,
     PROCEDIMENTO,
     UNIDADE,
-    VL_FATOR_PRO_FAT
+    VL_FATOR_PRO_FAT,
+    custo
   ) %>%
   summarise(
     itens = n(),
@@ -272,6 +279,23 @@ total <- total_itens %>%
     VL_FATOR_PRO_FAT,
     freq,
     qtd_perc
+  )
+
+total2 <- total_itens %>%
+  inner_join(CIRURGIAS_ABC, by = "CIRURGIA") %>%
+  mutate(freq = itens/cirurgias) %>%
+  mutate(qtd_perc = round(QT/cirurgias, 9) ) %>%
+  select(
+    COD_CIRURGIA,
+    CIRURGIA,
+    ESPECIE,
+    CLASSE,
+    PROCEDIMENTO,
+    cirurgias,
+    itens,
+    freq,
+    qtd_perc,
+    custo
   )
 
 # curva abc do faturamento
