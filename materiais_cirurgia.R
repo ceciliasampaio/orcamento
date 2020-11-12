@@ -242,6 +242,8 @@ total_itens <- dados %>%
     PRODUTO_ESPECIE,
     PRODUTO_CLASSE,
     PRODUTO_SUBCLASSE,
+    ESPECIE,
+    CLASSE,
     CONTA_CUSTO,
     CD_PRO_FAT,
     PROCEDIMENTO,
@@ -281,7 +283,7 @@ total <- total_itens %>%
     qtd_perc
   )
 
-total2 <- total_itens %>%
+tabela <- total_itens %>%
   inner_join(CIRURGIAS_ABC, by = "CIRURGIA") %>%
   mutate(freq = itens/cirurgias) %>%
   mutate(qtd_perc = round(QT/cirurgias, 9) ) %>%
